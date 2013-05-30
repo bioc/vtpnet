@@ -1,0 +1,219 @@
+
+%
+% NOTE -- ONLY EDIT THE .Rnw FILE!!!  The .tex file is
+% likely to be overwritten.
+%
+
+%\VignetteIndexEntry{vtpnet: variant-transcription factor-network tools}
+%\VignetteDepends{graph, Rgraphviz}
+%\VignetteKeywords{networks, variants, transcription factors}
+%\VignettePackage{vtpnet}
+
+\documentclass[12pt]{article}
+
+\usepackage{amsmath,pstricks}
+\usepackage[authoryear,round]{natbib}
+\usepackage{hyperref}
+
+
+\textwidth=6.2in
+\textheight=8.5in
+%\parskip=.3cm
+\oddsidemargin=.1in
+\evensidemargin=.1in
+\headheight=-.3in
+
+\newcommand{\scscst}{\scriptscriptstyle}
+\newcommand{\scst}{\scriptstyle}
+
+
+\newcommand{\Rfunction}[1]{{\texttt{#1}}}
+\newcommand{\Robject}[1]{{\texttt{#1}}}
+\newcommand{\Rpackage}[1]{{\textit{#1}}}
+\newcommand{\Rmethod}[1]{{\texttt{#1}}}
+\newcommand{\Rfunarg}[1]{{\texttt{#1}}}
+\newcommand{\Rclass}[1]{{\textit{#1}}}
+
+\textwidth=6.2in
+
+\bibliographystyle{plainnat} 
+ 
+\begin{document}
+%\setkeys{Gin}{width=0.55\textwidth}
+
+\title{\textit{vtpnet}: variant-transcription factor-phenotype networks}
+\author{VJ Carey}
+\maketitle
+
+\section{Introduction}
+
+In a wide-ranging paper (PMID 22955828 \cite{MauranoSci}), Maurano and colleagues illustrate
+the concept of ``common networks for common diseases'' with a
+bipartite graph.  One class of nodes is a set of autoimmune disorders,
+the other class is a set of transcription factors (TFs).
+In this graph,
+an edge exists between a disorder node and a TF node if a SNP that
+is significantly associated with the risk of the disorder
+lies in a genomic region possessing a strong match to the binding
+motif of the TF.
+This package defines tools to investigate the construction
+and statistical interpretation of such bipartite graphs, which
+we will denote VTP (variant-transcription factor-phenotype) networks.
+
+\section{Illustrative example of an unpruned VTP}
+
+The following code uses the \texttt{graphNEL} class to
+construct an approximation to the complete
+bipartite graph underlying Figure 4A of the Maurano paper;
+Figure \ref{subg} illustrates an arbitrary complete subgraph.
+The elements of \texttt{diseaseTags} are formatted to
+allow multiline rendering of the strings in node displays.
+It will be useful to distinguish a display token type and
+an analysis token type to simplify programming.
+
+<<lkco, keep.source=TRUE>>=
+#
+# tags formatted for display
+#
+diseaseTags = c("Ankylosing\\\nspondylitis", "Asthma",
+      "Celiac\\\ndisease", "Crohn's\\\ndisease",
+      "Multiple\\\nsclerosis", "Primary\\\nbiliary\\\ncirrhosis",
+      "Psoriasis", "Rheumatoid\\\narthritis", 
+      "Systemic\\\nlupus\\\nerythematosus",
+      "Systemic\\\nsclerosis", "Type 1\\\ndiabetes", 
+      "Ulcerative\\\ncolitis"
+)
+TFtags = c("ELF3", "MEF2A", "TCF3", "PAX4", "STAT3",
+   "ESR1", "POU2F1", "STAT1", "YY1", "SP1", "CDC5L",
+   "NR3C1", "EGR1", "PPARG", "HNF4A", "REST", "PPARA",
+   "AR", "NFKB1", "HNF1A", "TFAP2A")
+# define adjacency matrix
+adjm = matrix(1, nr=length(diseaseTags), nc=length(TFtags))
+dimnames(adjm) = list(diseaseTags, TFtags)
+library(graph)
+cvtp = ugraph(aM2bpG(adjm)) # complete (V)TP network; variants not involved yet
+@
+\begin{figure}
+\setkeys{Gin}{width=.85\textwidth}
+\begin{center}
+<<dog1,fig=TRUE>>=
+library(Rgraphviz)
+#flat = function(x, g) c(x, edges(g)[[x]])
+#sub = subGraph(unique(c(flat("Crohn's\\\ndisease", cvtp), 
+#    flat("Ulcerative\\\ncolitis", cvtp))), cvtp)
+sub = subGraph(unique(c(diseaseTags[1:4], TFtags[1:6])), cvtp)
+plot(sub, attrs=list(node=list(shape="box", fixedsize=FALSE)))
+#plot(cvtp, attrs=list(graph=list(margin=c(.5,.5), size=c(4.1,4.1)), 
+#   node=list(shape="box", fixedsize=FALSE, height=1)))
+@
+\caption{A complete bipartite graph for arbitrarily
+selected subsets of the autoimmune disorders
+and TFs found in Figure 4A of Maurano et al.}
+\label{subg}
+\end{center}
+\end{figure}
+
+\section{Data on GWAS variants: their associated
+phenotype, locations, and other characteristics}
+
+We will use the GWAS data provided at
+\url{https://www.sciencemag.org/content/suppl/2012/09/04/science.1222794.DC1/1222794-Maurano-tableS2.txt}, which was manually imported to a GRanges instance
+in hg19 origin-1 coordinates.
+
+<<lkvd>>=
+library(vtpnet)
+data(maurGWAS)
+length(maurGWAS)
+names(values(maurGWAS))
+@
+
+\section{Data on transcription factor binding sites}
+
+We have included the result of using FIMO \cite{Grant}
+to scan for motif matches for TF PAX4 as modeled in the 
+Bioconductor \textit{MotifDb} collection.  The
+\texttt{--max-stored-scores} parameter was set to 10000000
+so that $p$ of up to $10^{-4}$ are retained.
+
+<<lkpax>>=
+data(pax4)
+length(pax4)
+pax4[1:4]
+@
+
+We can also generate our own motif-match ranges.
+Here is an example of a parallelized search 
+against hg19 using \texttt{matchPWM}.
+<<lksearch,eval=FALSE>>=
+library(foreach)
+library(doParallel)
+registerDoParallel(cores=12)
+library(BSgenome.Hsapiens.UCSC.hg19)
+library(MotifDb)
+sn = seqnames(Hsapiens)[1:24]
+pax4 = query(MotifDb, "pax4")[[1]]
+ans = foreach(i=1:24) %dopar% {
+ cat(i)
+ subj = Hsapiens[[ sn[i] ]]
+ matchPWM( pax4, subj, "75%" )
+}
+pax4_75 = 
+ do.call(c, lapply(1:length(ans), function(x) 
+  {GRanges(sn[x], as(ans[[x]], "IRanges"))}))
+save(pax4_75, file="pax4_75.rda")
+@
+
+Results of such searches retaining matches at scores of
+85\% and 75\% of the maximum achievable score have been stored
+with this package.
+
+\section{Building a VTP network: one edge per phenotype}
+
+We can survey the entire GWAS catalog for intersection
+with putative PAX4 binding sites.  First the two Bioconductor
+internal binding site sets.
+
+<<lkmat>>=
+data(pax4_85)
+vp_pax4_85 = maurGWAS[ overlapsAny(maurGWAS, pax4_85) ]
+length(vp_pax4_85)
+data(pax4_75)
+vp_pax4_75 = maurGWAS[ overlapsAny(maurGWAS, pax4_75) ]
+length(vp_pax4_75)
+@
+
+Then the FIMO-based set.
+<<lkfim>>=
+vp_pax4_fimo = maurGWAS[ overlapsAny(maurGWAS, pax4) ]
+length(vp_pax4_fimo)
+@
+
+The lengths
+reported here are the numbers of phenotypes linked to PAX4 in
+a VTP according
+to various motif matching schemes.  For the two
+non-null results, we have
+<<lkta>>=
+u75 = unique(vp_pax4_75$disease_trait)
+ufimo = unique(vp_pax4_fimo$disease_trait)
+length(setdiff(u75, ufimo))
+length(setdiff(ufimo, u75))
+@
+
+Clearly the identification of TP links is sensitive to the 
+approach used to locate binding sites.  However, as noted
+in the Maurano paper, the use of matching to the reference
+genome without SNP injection is potentially problematic.
+
+\section{Session information}
+
+<<lksess>>=
+sessionInfo()
+@
+
+\section{Bibliography}
+
+\bibliography{vtpnet}
+
+
+\end{document}
