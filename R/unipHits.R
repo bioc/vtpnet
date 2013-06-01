@@ -8,7 +8,7 @@ rng2facHits = function(rngsetgen = function() makeCurrentGwascat(),
  require(GenomicRanges)
  require(gwascat)
  curgw = as( rngsetgen(), "GRanges" )
- urngs = factorRngs,
+ urngs = factorRngs
  tags = gsub(".rda", "", urngs)
  require(doParallel)
  require(foreach)

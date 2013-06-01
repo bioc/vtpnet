@@ -25,11 +25,11 @@ gwMatchPWM = function( mdb1, tag, bsg=Hsapiens, nchr=24, thresh="75%" ) {
     do.call(c, ans)
    }
 
-getMtags = function(mdb) {
+getMtags = function(mdb, fixer=function(x) gsub("\\/", "_", x)) {
    if (!is(mdb, "MotifList")) stop("requires MotifList input")
    utags = make.unique(values(mdb)$geneSymbol)
    longtags = names(mdb)
-   list(utags = utags, longtags = longtags)
+   list(utags = fixer(utags), longtags = fixer(longtags))
 }
 
 MdbSearchToDisk = function(mdb, thresh="80%", cores=14) {
