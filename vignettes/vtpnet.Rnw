@@ -169,6 +169,8 @@ with this package.
 
 \section{Building a VTP network: one edge per phenotype}
 
+\subsection{Raw matches}
+
 We can survey the entire GWAS catalog for intersection
 with putative PAX4 binding sites.  First the two Bioconductor
 internal binding site sets.
@@ -205,10 +207,25 @@ approach used to locate binding sites.  However, as noted
 in the Maurano paper, the use of matching to the reference
 genome without SNP injection is potentially problematic.
 
+\subsection{Filtering}
+
+It is useful to restrict the phenotypes of interest, and to map
+them to broader classes, and to include TFBS matching scores
+for the purpose of filtering edges.  Here we will use the NHGRI GWAS catalog against
+FIMO-based (reference genome matching only) PAX4 calls.
+
+<<domap>>=
+data(cancerMap)
+library(gwascat)
+cangw = filterGWASbyMap( gwrngs, cancerMap )
+getOneHits( pax4, cangw, "fimo" )
+@
+
+
 \section{Appendix: generating the ALT-injected genome image}
 
 
-<<algiz>>
+<<algiz>>=
 altize = function(chtag = "21",
 #
 # from sketch by Herve Pages, May 2013

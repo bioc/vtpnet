@@ -1,3 +1,17 @@
+getOneHits = function(tfbsrng, gwr, origin=c("fimo", "gwMatchPWM")) {
+   maxsco = max(tfbsrng$score)
+   fo = findOverlaps( gwr, tfbsrng )
+   ans = gwr[ queryHits(fo) ]
+   ans$score = tfbsrng$score[ subjectHits(fo) ]
+   if (origin == "fimo") {
+     ans$pvalue = as.numeric(tfbsrng$pvalue)[subjectHits(fo)]
+     ans$qvalue = as.numeric(tfbsrng$qvalue)[subjectHits(fo)]
+     }
+   metadata(ans)$maxscore = maxsco
+   ans
+}
+
+
 rng2facHits = function(rngsetgen = function() makeCurrentGwascat(), origin=c("fimo", "gwMatchPWM"),
     factorRngs = dir(patt="rda$"), ncore=12) {
 #
@@ -16,17 +30,7 @@ rng2facHits = function(rngsetgen = function() makeCurrentGwascat(), origin=c("fi
  unipans3 = foreach (i = 1:length(urngs)) %dopar% {
    cat(i)
    tmp = get(load(urngs[i]))
-   maxsco = max(tmp$score)
-   #try(curgw[ overlapsAny( curgw, tmp ) ])
-   fo = findOverlaps( curgw, tmp )
-   ans = curgw[ queryHits(fo) ]
-   ans$score = tmp$score[ subjectHits(fo) ]
-   if (origin == "fimo") {
-     ans$pvalue = as.numeric(tmp$pvalue)[subjectHits(fo)]
-     ans$qvalue = as.numeric(tmp$qvalue)[subjectHits(fo)]
-     }
-   metadata(ans)$maxscore = maxsco
-   ans
+   getOneHits( tmp, curgw, origin )
    } 
  names(unipans3) = tags
  unipans3
