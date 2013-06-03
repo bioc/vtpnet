@@ -1,4 +1,4 @@
-rng2facHits = function(rngsetgen = function() makeCurrentGwascat(),
+rng2facHits = function(rngsetgen = function() makeCurrentGwascat(), origin=c("fimo", "gwMatchPWM"),
     factorRngs = dir(patt="rda$"), ncore=12) {
 #
 # factorRngs is collection of GRanges of factor binding regions on disk
@@ -21,6 +21,10 @@ rng2facHits = function(rngsetgen = function() makeCurrentGwascat(),
    fo = findOverlaps( curgw, tmp )
    ans = curgw[ queryHits(fo) ]
    ans$score = tmp$score[ subjectHits(fo) ]
+   if (origin == "fimo") {
+     ans$pvalue = as.numeric(tmp$pvalue)[subjectHits(fo)]
+     ans$qvalue = as.numeric(tmp$qvalue)[subjectHits(fo)]
+     }
    metadata(ans)$maxscore = maxsco
    ans
    } 
