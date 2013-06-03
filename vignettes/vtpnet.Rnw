@@ -205,6 +205,49 @@ approach used to locate binding sites.  However, as noted
 in the Maurano paper, the use of matching to the reference
 genome without SNP injection is potentially problematic.
 
+\section{Appendix: generating the ALT-injected genome image}
+
+
+<<algiz>>
+altize = function(chtag = "21",
+#
+# from sketch by Herve Pages, May 2013
+#
+  slpack="SNPlocs.Hsapiens.dbSNP.20120608",
+  hgpack ="BSgenome.Hsapiens.UCSC.hg19",
+  faElFun = function(x) sub("%%TAG%%", x, "alt%%TAG%%chr"),
+  faTargFun = function(x) 
+     sub("%%TAG%%", x, "alt%%TAG%%_hg19.fa")) {
+    require(slpack, character.only=TRUE)
+    require(hgpack, character.only=TRUE)
+    require("ShortRead", character.only=TRUE)
+    chk = grep("ch|chr", chtag)
+    if (length(chk)>0) {
+      warning("clearing prefix ch or chr from chtag")
+      chtag = gsub("ch|chr", "", chtag)
+      }
+    snpgettag = paste0("ch", chtag)
+    ggettag = paste0("chr", chtag)
+    cursnps = getSNPlocs(snpgettag, as.GRanges=TRUE)
+    curgenome = unmasked(Hsapiens[[ggettag]])
+    ref_allele = 
+     strsplit(as.character(curgenome[start(cursnps)]),
+        NULL, fixed=TRUE)[[1L]]
+    all_alleles = IUPAC_CODE_MAP[cursnps$alleles_as_ambig]
+    alt_alleles = mapply( function(ref,all)
+      sub(ref, "", all, fixed=TRUE),
+        ref_allele, all_alleles, USE.NAMES=FALSE)
+    cursnps$ref_allele = ref_allele
+    cursnps$alt_alleles = alt_alleles
+    cursnps$one_alt = substr(cursnps$alt_alleles, 1, 1)
+    altg = list(replaceLetterAt(curgenome, start(cursnps),
+      cursnps$one_alt))
+    names(altg) = faElFun(chtag)
+    writeFasta(DNAStringSet(altg), file=faTargFun(chtag))
+}
+@
+    
+
 \section{Session information}
 
 <<lksess>>=
