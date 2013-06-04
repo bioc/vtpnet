@@ -3,6 +3,8 @@ getOneHits = function(tfbsrng, gwr, origin=c("fimo", "gwMatchPWM")) {
    fo = findOverlaps( gwr, tfbsrng )
    ans = gwr[ queryHits(fo) ]
    ans$score = tfbsrng$score[ subjectHits(fo) ]
+   ans$tfstart = start(tfbsrng)[ subjectHits(fo) ]
+   ans$tfend = end(tfbsrng)[ subjectHits(fo) ]
    if (origin == "fimo") {
      ans$pvalue = as.numeric(tfbsrng$pvalue)[subjectHits(fo)]
      ans$qvalue = as.numeric(tfbsrng$qvalue)[subjectHits(fo)]
