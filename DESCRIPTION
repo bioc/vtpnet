@@ -1,11 +1,12 @@
 Package: vtpnet
 Title: variant-transcription factor-phenotype networks
-Version: 0.5.2
+Version: 0.5.3
 Author: VJ Carey <stvjc@channing.harvard.edu>
 Description: variant-transcription factor-phenotype networks, inspired
         by Maurano et al., Science (2012), PMID 22955828
 Suggests: MotifDb, VariantAnnotation, Rgraphviz
-Depends: R (>= 3.0.0), graph, GenomicRanges, gwascat
+Depends: R (>= 3.0.0), graph, GenomicRanges, gwascat,
+	doParallel, foreach
 Maintainer: VJ Carey <stvjc@channing.harvard.edu>
 License: Artistic-2.0
 LazyLoad: yes

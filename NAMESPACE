@@ -1,1 +1,5 @@
 exportPattern(".*")
+
+import(GenomicRanges)
+import(gwascat)
+import(graph)

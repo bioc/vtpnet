@@ -21,8 +21,6 @@ rng2facHits = function(rngsetgen = function() makeCurrentGwascat(), origin=c("fi
 # rngsetgen() will provide a set of variants in GRanges whose
 #   coincidence with factorRngs is to be tabulated
 #
- require(GenomicRanges)
- require(gwascat)
  curgw = as( rngsetgen(), "GRanges" )
  urngs = factorRngs
  tags = gsub(".rda", "", urngs)
