@@ -1,6 +1,6 @@
 Package: vtpnet
 Title: variant-transcription factor-phenotype networks
-Version: 0.7.0
+Version: 0.8.0
 Author: VJ Carey <stvjc@channing.harvard.edu>
 Description: variant-transcription factor-phenotype networks, inspired
         by Maurano et al., Science (2012), PMID 22955828
