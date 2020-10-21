@@ -215,8 +215,8 @@ FIMO-based (reference genome matching only) PAX4 calls.
 
 <<domap>>=
 data(cancerMap)
-library(gwascat)
-data(gwrngs19)
+requireNamespace("gwascat")
+load(system.file("legacy/gwrngs19.rda", package="gwascat"))
 cangw = filterGWASbyMap( gwrngs19, cancerMap )
 getOneHits( pax4, cangw, "fimo" )
 @
